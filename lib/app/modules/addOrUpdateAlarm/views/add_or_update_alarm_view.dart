@@ -4,6 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_time_picker_spinner/flutter_time_picker_spinner.dart';
 
 import 'package:get/get.dart';
+import 'package:ultimate_alarm_clock/app/data/providers/firestore_provider.dart';
 import 'package:ultimate_alarm_clock/app/data/models/alarm_model.dart';
 import 'package:ultimate_alarm_clock/app/modules/addOrUpdateAlarm/controllers/input_time_controller.dart';
 import 'package:ultimate_alarm_clock/app/modules/addOrUpdateAlarm/views/alarm_id_tile.dart';
@@ -25,7 +26,9 @@ import 'package:ultimate_alarm_clock/app/modules/settings/controllers/settings_c
 import 'package:ultimate_alarm_clock/app/modules/settings/controllers/theme_controller.dart';
 import 'package:ultimate_alarm_clock/app/utils/constants.dart';
 import 'package:ultimate_alarm_clock/app/utils/utils.dart';
+import '../../../data/providers/isar_provider.dart';
 import '../controllers/add_or_update_alarm_controller.dart';
+
 
 class AddOrUpdateAlarmView extends GetView<AddOrUpdateAlarmController> {
   AddOrUpdateAlarmView({Key? key}) : super(key: key);
@@ -164,86 +167,176 @@ class AddOrUpdateAlarmView extends GetView<AddOrUpdateAlarmController> {
                         } else {
                           controller.offsetDetails.value = {};
                         }
-                        AlarmModel alarmRecord = AlarmModel(
-                          snoozeDuration: controller.snoozeDuration.value,
-                          offsetDetails: controller.offsetDetails,
-                          label: controller.label.value,
-                          isOneTime: controller.isOneTime.value,
-                          lastEditedUserId: controller.lastEditedUserId,
-                          mutexLock: controller.mutexLock.value,
-                          alarmID: controller.alarmID,
-                          ownerId: controller.ownerId,
-                          ownerName: controller.ownerName,
-                          activityInterval:
-                              controller.activityInterval.value * 60000,
-                          days: controller.repeatDays.toList(),
-                          alarmTime: Utils.timeOfDayToString(
-                            TimeOfDay.fromDateTime(
-                              controller.selectedTime.value,
-                            ),
-                          ),
-                          mainAlarmTime: Utils.timeOfDayToString(
-                            TimeOfDay.fromDateTime(
-                              controller.selectedTime.value,
-                            ),
-                          ),
-                          intervalToAlarm: Utils.getMillisecondsToAlarm(
-                            DateTime.now(),
+
+                        // bool res2 = await FirestoreDb.doesAlarmExistTime(controller.userModel?.value, time);
+                        // print('res2');
+                        // print(res2);
+
+
+                        String time = Utils.timeOfDayToString(
+                          TimeOfDay.fromDateTime(
                             controller.selectedTime.value,
                           ),
-                          isActivityEnabled: controller.isActivityenabled.value,
-                          minutesSinceMidnight: Utils.timeOfDayToInt(
-                            TimeOfDay.fromDateTime(
+                        );
+                        bool res = await IsarDb.doesAlarmExistTime(time);
+                        if (res){
+                          Get.defaultDialog(
+                            titlePadding: const EdgeInsets.symmetric(
+                              vertical: 20,
+                            ),
+                            backgroundColor: themeController.isLightMode.value
+                                ? kLightSecondaryBackgroundColor
+                                : ksecondaryBackgroundColor,
+                            title: 'Alarm with this time already exist',
+                            titleStyle: Theme.of(context).textTheme.displaySmall,
+                            content: Column(
+                              children: [
+                                Text(
+                                  'You have unsaved changes. Are you sure you want to leave this'
+                                      ' page?',
+                                  style: Theme.of(context).textTheme.bodyMedium,
+                                  textAlign: TextAlign.center,
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.only(
+                                    top: 20,
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                    children: [
+                                      TextButton(
+                                        onPressed: () {
+                                          Get.back();
+                                        },
+                                        style: ButtonStyle(
+                                          backgroundColor:
+                                          MaterialStateProperty.all(kprimaryColor),
+                                        ),
+                                        child: Text(
+                                          'Cancel',
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .displaySmall!
+                                              .copyWith(
+                                            color: kprimaryBackgroundColor,
+                                          ),
+                                        ),
+                                      ),
+                                      OutlinedButton(
+                                        onPressed: () {
+                                          Get.offNamedUntil(
+                                            '/home',
+                                                (route) => route.settings.name == '/splash-screen',
+                                          );
+                                        },
+                                        style: OutlinedButton.styleFrom(
+                                          side: BorderSide(
+                                            color: themeController.isLightMode.value
+                                                ? Colors.red.withOpacity(0.9)
+                                                : Colors.red,
+                                            width: 1,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          'Leave',
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .displaySmall!
+                                              .copyWith(
+                                            color: themeController.isLightMode.value
+                                                ? Colors.red.withOpacity(0.9)
+                                                : Colors.red,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+
+                        }else{
+                          AlarmModel alarmRecord = AlarmModel(
+                            snoozeDuration: controller.snoozeDuration.value,
+                            offsetDetails: controller.offsetDetails,
+                            label: controller.label.value,
+                            isOneTime: controller.isOneTime.value,
+                            lastEditedUserId: controller.lastEditedUserId,
+                            mutexLock: controller.mutexLock.value,
+                            alarmID: controller.alarmID,
+                            ownerId: controller.ownerId,
+                            ownerName: controller.ownerName,
+                            activityInterval:
+                            controller.activityInterval.value * 60000,
+                            days: controller.repeatDays.toList(),
+                            alarmTime: Utils.timeOfDayToString(
+                              TimeOfDay.fromDateTime(
+                                controller.selectedTime.value,
+                              ),
+                            ),
+                            mainAlarmTime: Utils.timeOfDayToString(
+                              TimeOfDay.fromDateTime(
+                                controller.selectedTime.value,
+                              ),
+                            ),
+                            intervalToAlarm: Utils.getMillisecondsToAlarm(
+                              DateTime.now(),
                               controller.selectedTime.value,
                             ),
-                          ),
-                          isLocationEnabled: controller.isLocationEnabled.value,
-                          weatherTypes: Utils.getIntFromWeatherTypes(
-                            controller.selectedWeather.toList(),
-                          ),
-                          isWeatherEnabled: controller.isWeatherEnabled.value,
-                          location: Utils.geoPointToString(
-                            Utils.latLngToGeoPoint(
-                              controller.selectedPoint.value,
+                            isActivityEnabled: controller.isActivityenabled.value,
+                            minutesSinceMidnight: Utils.timeOfDayToInt(
+                              TimeOfDay.fromDateTime(
+                                controller.selectedTime.value,
+                              ),
                             ),
-                          ),
-                          isSharedAlarmEnabled:
-                              controller.isSharedAlarmEnabled.value,
-                          isQrEnabled: controller.isQrEnabled.value,
-                          qrValue: controller.qrValue.value,
-                          isMathsEnabled: controller.isMathsEnabled.value,
-                          numMathsQuestions: controller.numMathsQuestions.value,
-                          mathsDifficulty:
-                              controller.mathsDifficulty.value.index,
-                          isShakeEnabled: controller.isShakeEnabled.value,
-                          shakeTimes: controller.shakeTimes.value,
-                          ringtoneName: controller.customRingtoneName.value,
-                        );
+                            isLocationEnabled: controller.isLocationEnabled.value,
+                            weatherTypes: Utils.getIntFromWeatherTypes(
+                              controller.selectedWeather.toList(),
+                            ),
+                            isWeatherEnabled: controller.isWeatherEnabled.value,
+                            location: Utils.geoPointToString(
+                              Utils.latLngToGeoPoint(
+                                controller.selectedPoint.value,
+                              ),
+                            ),
+                            isSharedAlarmEnabled:
+                            controller.isSharedAlarmEnabled.value,
+                            isQrEnabled: controller.isQrEnabled.value,
+                            qrValue: controller.qrValue.value,
+                            isMathsEnabled: controller.isMathsEnabled.value,
+                            numMathsQuestions: controller.numMathsQuestions.value,
+                            mathsDifficulty:
+                            controller.mathsDifficulty.value.index,
+                            isShakeEnabled: controller.isShakeEnabled.value,
+                            shakeTimes: controller.shakeTimes.value,
+                            ringtoneName: controller.customRingtoneName.value,
+                          );
 
                         // Adding offset details to the database if
                         // its a shared alarm
                         if (controller.isSharedAlarmEnabled.value) {
-                          alarmRecord.offsetDetails = controller.offsetDetails;
-                          alarmRecord.mainAlarmTime = Utils.timeOfDayToString(
-                            TimeOfDay.fromDateTime(
-                              controller.selectedTime.value,
-                            ),
-                          );
+                        alarmRecord.offsetDetails = controller.offsetDetails;
+                        alarmRecord.mainAlarmTime = Utils.timeOfDayToString(
+                        TimeOfDay.fromDateTime(
+                        controller.selectedTime.value,
+                        ),
+                        );
                         }
 
                         try {
-                          if (controller.alarmRecord == null) {
-                            await controller.createAlarm(alarmRecord);
-                          } else {
-                            AlarmModel updatedAlarmModel =
-                                controller.updatedAlarmModel();
-                            await controller.updateAlarm(updatedAlarmModel);
-                          }
-                        } catch (e) {
-                          debugPrint(e.toString());
+                        if (controller.alarmRecord == null) {
+                        await controller.createAlarm(alarmRecord);
+                        } else {
+                        AlarmModel updatedAlarmModel =
+                        controller.updatedAlarmModel();
+                        await controller.updateAlarm(updatedAlarmModel);
                         }
-
+                        } catch (e) {
+                        debugPrint(e.toString());
+                        }
                         await controller.checkOverlayPermissionAndNavigate();
+                        }
                       },
                     ),
                   ),

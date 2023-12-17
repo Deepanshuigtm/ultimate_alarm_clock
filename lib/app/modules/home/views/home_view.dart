@@ -660,6 +660,8 @@ class HomeView extends GetView<HomeController> {
                                         () => GestureDetector(
                                           onTap: () {
                                             Utils.hapticFeedback();
+                                            print('2st runs');
+
 
                                             // If multiple select mode is not on, then only you can update the alarm
                                             if (!controller
